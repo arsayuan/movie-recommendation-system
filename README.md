@@ -57,67 +57,106 @@ Sebagian besar rating yang diberikan pengguna berada pada nilai 3.0 hingga 4.0, 
 ## Data Preparation
 Tahap ini bertujuan untuk menyiapkan data sebelum digunakan dalam pemodelan sistem rekomendasi.
 
-Pertama, dilakukan pemeriksaan missing values pada dataset movies dan ratings, dan hasilnya menunjukkan tidak ada data yang hilang, sehingga tidak diperlukan proses imputasi.
+### 1. Cek Missing Value
+Sebelum melakukan modeling, dilakukan pemeriksaan terhadap keberadaan missing value pada dataset `movies` dan `ratings`.  
+Hasil pemeriksaan menunjukkan bahwa tidak terdapat missing value pada kedua dataset, sehingga tidak diperlukan teknik imputasi atau pembersihan lanjutan.
 
-```sh
-# Cek Missing Value
-print(movies.isnull().sum())
-print(ratings.isnull().sum())
-```
+### 2. Split Data
 
-Selanjutnya, data ratings dibagi menjadi data latih (80%) dan data uji (20%) menggunakan train_test_split. Ini penting untuk mengevaluasi performa model secara objektif.
+Data `ratings` dibagi menjadi 80% data latih dan 20% data uji menggunakan teknik train-test split.
 
-```sh
-# Split Data
-train_data, test_data = train_test_split(ratings, test_size=0.2, random_state=42)
+Alasan pemilihan rasio 80:20 adalah:
+- 80% data latih cukup untuk membangun model yang kuat.
+- 20% data uji cukup untuk mengevaluasi performa model secara objektif.
+- Rasio ini merupakan praktik umum dalam machine learning untuk menjaga keseimbangan antara proses training dan validasi.
 
-print('Train:', train_data.shape)
-print('Test:', test_data.shape)
-```
+### 3. Encoding User dan Movie ID
 
-Setelah itu, kolom userId dan movieId diubah menjadi indeks numerik (user_idx dan movie_idx) menggunakan teknik encoding, agar data dapat diolah dalam bentuk matriks.
-```sh
-# Encode User ID dan Movie ID
-user_ids = ratings['userId'].unique()
-movie_ids = ratings['movieId'].unique()
+Untuk membentuk User-Item Matrix, ID pengguna (`userId`) dan ID film (`movieId`) di-encode menjadi indeks numerik menggunakan teknik mapping sederhana.
 
-user_to_index = {uid: idx for idx, uid in enumerate(user_ids)}
-movie_to_index = {mid: idx for idx, mid in enumerate(movie_ids)}
+Tujuannya adalah:
+- Menyesuaikan struktur data ke dalam format matrix berbasis indeks.
+- Mempermudah pemodelan Collaborative Filtering berbasis Matrix Factorization.
 
-ratings['user_idx'] = ratings['userId'].map(user_to_index)
-ratings['movie_idx'] = ratings['movieId'].map(movie_to_index)
+### 4. Membentuk User-Item Matrix
 
-train_data['user_idx'] = train_data['userId'].map(user_to_index)
-train_data['movie_idx'] = train_data['movieId'].map(movie_to_index)
-
-test_data['user_idx'] = test_data['userId'].map(user_to_index)
-test_data['movie_idx'] = test_data['movieId'].map(movie_to_index)
-```
-
-Langkah terakhir adalah membentuk user-item matrix dari data latih, menggunakan pivot_table, lalu mengisi nilai kosong dengan 0 menggunakan fillna(0). Matriks ini digunakan sebagai input pada model collaborative filtering.
-
-```sh
-# Buat User-Item Matrix
-user_item_matrix = train_data.pivot_table(index='user_idx', columns='movie_idx', values='rating')
-user_item_filled = user_item_matrix.fillna(0)
-```
+Dari data latih (`train_data`), dibentuk User-Item Matrix dengan pengguna sebagai baris dan film sebagai kolom.
 
 ## Modeling
-Pada tahap ini, dikembangkan tiga pendekatan sistem rekomendasi: Content-Based Filtering, Collaborative Filtering, dan Top-N Recommendation berdasarkan rating. Setiap pendekatan digunakan untuk menghasilkan rekomendasi film dengan mekanisme dan logika yang berbeda.
+Pada tahap ini, dikembangkan dua pendekatan utama untuk membangun sistem rekomendasi film, yaitu **Content-Based Filtering** dan **Collaborative Filtering**. Selain itu, sistem juga menyajikan **Top-N Recommendation** sebagai bentuk tampilan hasil rekomendasi terbaik untuk pengguna.
 
-1. **Content-Based Filtering (CBF)**
+### 1. **Content-Based Filtering (CBF)**
 
-Pendekatan ini menggunakan informasi konten film, khususnya fitur genres, untuk mengukur kemiripan antar film menggunakan TF-IDF vectorization dan cosine similarity. Sistem kemudian merekomendasikan film yang memiliki genre serupa dengan film yang disukai pengguna.
+Content-Based Filtering membangun sistem rekomendasi berdasarkan informasi konten film, seperti genre, untuk menentukan kemiripan antar film.
 
-2. **Collaborative Filtering (CB)**
+- **Teknik yang digunakan**:  
+  - TF-IDF Vectorization: Mengubah teks genre film menjadi representasi numerik berdasarkan frekuensi term terhadap dokumen.
+  - Cosine Similarity: Menghitung tingkat kemiripan antar film berdasarkan vektor TF-IDF.
 
-Pendekatan ini membangun sistem rekomendasi berdasarkan interaksi historis pengguna, menggunakan teknik matrix factorization. Dengan mempelajari pola rating dalam user-item matrix, model dapat memprediksi preferensi pengguna terhadap film yang belum ditonton dan memberikan rekomendasi yang bersifat personal.
+- **Proses yang dilakukan**:
+  1. Menerapkan TF-IDF pada kolom `genres`.
+  2. Menghitung cosine similarity antar seluruh pasangan film.
+  3. Memberikan rekomendasi film yang memiliki skor similarity tertinggi terhadap film favorit pengguna.
 
-3. **Top-N Recommendation**
+- **Top-N Recommendation CBF**:
+  
+  Untuk Content-Based Filtering, sistem menampilkan film-film dengan kemiripan genre tertinggi terhadap film yang dipilih pengguna.
+  
+  **Contoh:**
+  
+  Input film: `'Green Street Hooligans (a.k.a. Hooligans) (2005)'`
+  
+  Output rekomendasi berdasarkan genre serupa:
 
-Selain dua pendekatan utama, sistem juga menyajikan rekomendasi film berdasarkan statistik agregat rating. Rata-rata rating dan jumlah rating dihitung menggunakan groupby, kemudian difilter berdasarkan batas minimal jumlah reviewer untuk menjaga kualitas rekomendasi.
+| Title | Genres |
+|:------|:-------|
+| Capote (2005) | Crime\|Drama |
+| City by the Sea (2002) | Crime\|Drama |
+| Mean Streets (1973) | Crime\|Drama |
+| Rush (1991) | Crime\|Drama |
+| No Country for Old Men (2007) | Crime\|Drama |
 
-Fungsi top_n_movies() dikembangkan untuk mengambil N film terbaik dengan rating tertinggi dan jumlah reviewer tertentu. Pendekatan ini sangat berguna untuk menyarankan film-film populer yang terbukti disukai banyak orang.
+
+### 2. **Collaborative Filtering (CB)**
+
+Collaborative Filtering membangun sistem rekomendasi berdasarkan pola interaksi pengguna terhadap item (film) tanpa melihat konten film.
+
+- **Teknik yang digunakan**:
+  - Matrix Factorization menggunakan Singular Value Decomposition (SVD). SVD memfaktorkan user-item matrix menjadi tiga matriks terpisah. Ini memungkinkan model memahami hubungan laten antara pengguna dan film. Model mempelajari representasi numerik dari user dan item dalam ruang dimensi lebih rendah. Kemudian memprediksi rating untuk kombinasi user-film yang belum ada.
+  - Implementasi menggunakan library `Surprise`.
+
+- **Proses yang dilakukan**:
+  1. Melatih model SVD dengan data latih (train_data).
+  2. Memvalidasi model menggunakan data uji (test_data).
+  3. Menghasilkan prediksi rating untuk kombinasi user-film baru.
+
+- **Top-N Recommendation CBF**:
+  
+  Untuk Collaborative Filtering, sistem:
+  1. Memilih user secara acak.
+  2. Mencari film yang belum ditonton oleh user tersebut.
+  3. Menghitung prediksi rating untuk film-film yang belum ditonton.
+  4. Menampilkan 10 film dengan prediksi rating tertinggi.
+  
+  **Contoh:**
+
+  User terpilih: `User ID 60`
+
+  Output rekomendasi berdasarkan prediksi model:
+
+| Title | Genres |
+|:------|:-------|
+| Citizen Kane (1941) | Drama\|Mystery |
+| Cinema Paradiso (Nuovo cinema Paradiso) (1989) | Drama |
+| Paths of Glory (1957) | Drama\|War |
+| Touch of Evil (1958) | Crime\|Film-Noir\|Thriller |
+| Raise the Red Lantern (1991) | Drama |
+| Princess Mononoke (1997) | Action\|Adventure\|Animation\|Drama\|Fantasy |
+| Dr. Horrible's Sing-Along Blog (2008) | Comedy\|Drama\|Musical\|Sci-Fi |
+| Cosmos (1980) | Documentary |
+| Louis C.K.: Live at the Beacon Theater (2011) | Comedy |
+| Black Mirror (2011) | Drama\|Sci-Fi |
+
 
 ### Kelebihan & Kekurangan
 
