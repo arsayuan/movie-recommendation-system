@@ -167,11 +167,11 @@ Collaborative Filtering membangun sistem rekomendasi berdasarkan pola interaksi 
 | Top-N | Sederhana dan efektif untuk menampilkan film-film terbaik secara umum. | Tidak bersifat personal; semua pengguna akan menerima daftar yang sama. |
 
 ## Evaluation
-Untuk mengevaluasi performa sistem rekomendasi yang dibangun, digunakan metrik Root Mean Square Error (RMSE). Metrik ini sesuai digunakan untuk pendekatan Collaborative Filtering, karena model memprediksi rating numerik berdasarkan interaksi pengguna dan film.
 
-RMSE mengukur seberapa jauh prediksi rating yang dihasilkan model dari rating sebenarnya. Nilai RMSE yang lebih kecil menunjukkan performa model yang lebih baik.
+### 1. Evaluasi Collaborative Filtering (CF)
+Untuk Collaborative Filtering, model memprediksi rating numerik antara user dan film. Oleh karena itu, digunakan Root Mean Square Error (RMSE) sebagai metrik evaluasi. RMSE mengukur rata-rata jarak antara prediksi rating dengan rating sebenarnya. Semakin kecil nilai RMSE, semakin baik akurasi prediksi model.
 
-### Formula RMSE
+**Formula RMSE**
 
 $$
 RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)^2}
@@ -181,12 +181,29 @@ $$
 - $y_i$ : rating aktual
 - $n$ : jumlah data
 
-### Hasil Evaluation
-Model Collaborative Filtering yang dikembangkan berhasil mencapai RMSE sebesar 0.2331 pada data validasi di epoch ke-15. Ini menunjukkan bahwa model cukup baik dalam mempelajari preferensi pengguna dari data pelatihan, dengan tingkat kesalahan prediksi yang tergolong rendah.
+**Hasil Evaluation**
+Model Collaborative Filtering (SVD) menghasilkan RMSE sebesar 0.2331 pada data validasi di epoch ke-15.
 
 ![image](https://github.com/user-attachments/assets/77fbff98-d071-4ad3-bbf7-63249caa7c33)
 
-Sementara itu, pendekatan Content-Based Filtering dan Top-N Recommendation berbasis agregasi rating dievaluasi secara kualitatif, dengan meninjau apakah hasil rekomendasi relevan dan mencerminkan film-film berkualitas berdasarkan popularitas dan rating. Evaluasi lebih lanjut terhadap kepuasan pengguna bisa dilakukan menggunakan feedback pengguna langsung atau A/B testing di tahap implementasi nyata.
+Nilai RMSE yang cukup rendah menunjukkan bahwa model berhasil mempelajari pola preferensi pengguna dengan cukup baik. Model dapat diandalkan untuk memprediksi rating film baru yang belum ditonton pengguna.
+
+### 2. Evaluasi Content-Based Filtering (CBF)
+Content-Based Filtering tidak memprediksi rating, melainkan memberikan rekomendasi daftar film berdasarkan kemiripan konten.  
+Maka dari itu, evaluasi dilakukan menggunakan Precision@K. Precision@K mengukur proporsi film rekomendasi yang relevan terhadap preferensi pengguna. Makin tinggi precision, makin banyak rekomendasi yang sesuai dengan minat pengguna.
+
+**Langkah Evaluasi:**
+1. Mengambil film favorit pengguna (rating tinggi, misal ≥ 4.0).
+2. Memberikan rekomendasi N film berdasarkan kemiripan konten.
+3. Menghitung berapa banyak film rekomendasi yang memiliki genre yang sama dengan film favorit.
+
+**Contoh Hasil Evaluasi:**
+- Untuk **User ID 1**, dengan **Top-5 rekomendasi**:
+  - Precision = **1.0** (semua film rekomendasi sesuai genre favorit).
+- Untuk **User ID 50**, dengan **Top-5 rekomendasi**:
+  - Precision = **1.0** (semua film rekomendasi sesuai genre favorit).
+
+Nilai Precision yang tinggi menunjukkan bahwa Content-Based Filtering berhasil merekomendasikan film-film yang sesuai dengan genre kesukaan pengguna.
 
 
 [Kaggle]: <https://www.kaggle.com/datasets/ayushimishra2809/movielens-dataset>
