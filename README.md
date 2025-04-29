@@ -55,32 +55,49 @@ Sebagian besar rating yang diberikan pengguna berada pada nilai 3.0 hingga 4.0, 
 ![image](https://github.com/user-attachments/assets/ab8966f8-a133-46b1-b069-e45c540d55d8)
 
 ## Data Preparation
-Tahap ini bertujuan untuk menyiapkan data sebelum digunakan dalam pemodelan sistem rekomendasi.
 
-### 1. Cek Missing Value
-Sebelum melakukan modeling, dilakukan pemeriksaan terhadap keberadaan missing value pada dataset `movies` dan `ratings`.  
-Hasil pemeriksaan menunjukkan bahwa tidak terdapat missing value pada kedua dataset, sehingga tidak diperlukan teknik imputasi atau pembersihan lanjutan.
+Tahap ini bertujuan untuk menyiapkan data sebelum digunakan dalam pemodelan sistem rekomendasi.  
+Semua tahapan dilakukan berdasarkan kebutuhan dari dua pendekatan model: **Content-Based Filtering** dan **Collaborative Filtering**.
 
-### 2. Split Data
+### 1. Pemeriksaan Missing Value
 
-Data `ratings` dibagi menjadi 80% data latih dan 20% data uji menggunakan teknik train-test split.
+Langkah awal adalah memeriksa apakah terdapat nilai kosong (missing value) pada dataset `movies` dan `ratings`.  
+Hasil pemeriksaan menunjukkan bahwa **tidak ada nilai kosong**, sehingga tidak diperlukan proses imputasi atau pembersihan lanjutan.
 
-Alasan pemilihan rasio 80:20 adalah:
-- 80% data latih cukup untuk membangun model yang kuat.
-- 20% data uji cukup untuk mengevaluasi performa model secara objektif.
-- Rasio ini merupakan praktik umum dalam machine learning untuk menjaga keseimbangan antara proses training dan validasi.
+### 2. Ekstraksi Fitur Genre dengan TF-IDF
 
-### 3. Encoding User dan Movie ID
+Untuk pendekatan **Content-Based Filtering**, kita perlu mengekstrak fitur dari kolom `genres`. Teknik yang digunakan adalah **TF-IDF (Term Frequency-Inverse Document Frequency)**. TF-IDF digunakan untuk mengubah teks genre menjadi representasi numerik berbasis frekuensi, yang mencerminkan seberapa penting suatu genre bagi sebuah film relatif terhadap film lain. Hasil dari proses ini adalah **TF-IDF matrix**, yang kemudian digunakan untuk menghitung **cosine similarity** antar film.
 
-Untuk membentuk User-Item Matrix, ID pengguna (`userId`) dan ID film (`movieId`) di-encode menjadi indeks numerik menggunakan teknik mapping sederhana.
+Langkah ini penting agar sistem dapat merekomendasikan film berdasarkan kemiripan konten (genre).
 
-Tujuannya adalah:
-- Menyesuaikan struktur data ke dalam format matrix berbasis indeks.
-- Mempermudah pemodelan Collaborative Filtering berbasis Matrix Factorization.
+### 3. Split Data (Train-Test)
 
-### 4. Membentuk User-Item Matrix
+Untuk pendekatan **Collaborative Filtering**, diperlukan proses pelatihan model dan evaluasi.  
+Karena itu, data `ratings` dibagi menjadi dua bagian:
 
-Dari data latih (`train_data`), dibentuk User-Item Matrix dengan pengguna sebagai baris dan film sebagai kolom.
+- **80% data latih** digunakan untuk melatih model.
+- **20% data uji** digunakan untuk mengukur performa model secara objektif.
+
+Pemilihan rasio 80:20 dilakukan karena merupakan praktik umum yang seimbang antara pelatihan dan validasi. Dan juga, 80% cukup untuk membangun model, dan 20% cukup untuk mengukur generalisasi model ke data baru.
+
+### 4. Encoding ID User dan Movie
+
+Karena Collaborative Filtering berbasis matrix membutuhkan representasi numerik, maka dilakukan encoding:
+
+- `userId` dan `movieId` diubah menjadi **indeks numerik**.
+- Hal ini bertujuan agar data dapat digunakan dalam proses pembentukan **User-Item Matrix** serta diproses oleh algoritma machine learning tertentu.
+
+### 5. Pembentukan User-Item Matrix
+
+Untuk keperluan eksplorasi dan visualisasi, dibuat **User-Item Matrix** dari data latih, yaitu:
+
+- Baris: pengguna
+- Kolom: film
+- Nilai: rating yang diberikan
+
+Meskipun tidak digunakan secara langsung dalam model `Surprise`, matrix ini berguna untuk membangun pemahaman pola interaksi antara pengguna dan film.
+
+Dengan tahapan di atas, data telah diproses dan siap digunakan untuk membangun model rekomendasi menggunakan pendekatan Content-Based dan Collaborative Filtering.
 
 ## Modeling
 Pada tahap ini, dikembangkan dua pendekatan utama untuk membangun sistem rekomendasi film, yaitu **Content-Based Filtering** dan **Collaborative Filtering**. Selain itu, sistem juga menyajikan **Top-N Recommendation** sebagai bentuk tampilan hasil rekomendasi terbaik untuk pengguna.
